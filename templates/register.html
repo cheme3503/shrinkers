@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FastCamput Django</title>
+</head>
+<body>
+    <h2>회원가입</h2>
+    <h4>{%if msg %}{{msg}}{% endif %}</h4>
+    <form method="post">
+        {% csrf_token %} {{form.as_p}}
+        <buttton type = "submit">가입하기</buttton>
+    </form>
+
+
+</body>
+</html>
