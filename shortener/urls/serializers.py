@@ -2,7 +2,7 @@ from shortener.utils import url_count_changer
 from django.contrib.auth.models import User
 from shortener.models import Users, ShortenedUrls
 from rest_framework import serializers                  #serializer는 요청한 모델을 API로 보여줄 때 사용하는 클래스임. 보통 GET
-                                                        #방식으로 모델에 대한 데이터를 요청했을 때, Serializer를 활용해 데이터를 제공
+import requests                                                        #방식으로 모델에 대한 데이터를 요청했을 때, Serializer를 활용해 데이터를 제공
 
 class UserBaseSerializer(serializers.ModelSerializer):  #ModelSerializer를 상속받아 직렬화 클래스를 만듬
 
@@ -42,3 +42,8 @@ class UrlCreateSerializer(serializers.Serializer):
                 url_count_changer(request, True)
 
         return instance
+
+class BrowerStatSerializer(serializers.Serializer):
+    web_browser = serializers.CharField(max_length=50)
+    count = serializers.IntegerField()
+    date = serializers.DateField(source='created_at__date', required=False)

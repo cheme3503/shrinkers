@@ -3,11 +3,12 @@ from django.contrib.auth.models import User as U
 import string
 import random
 from django.contrib.gis.geoip2 import GeoIP2
-# import itertools
-# from typing import Dict
-# from django.db.models.base import Model
+from datetime import datetime,timedelta
+import itertools
+from typing import Dict
+from django.db.models.base import Model
 # from .models_utils import dict_filter, dict_slice, location_finder
-# from django.utils import timezone
+from django.utils import timezone
 
 # from django.contrib.auth.models import User
 
@@ -35,6 +36,7 @@ class Organization(models.Model):
 class Users(models.Model):
     user = models.OneToOneField(U, on_delete=models.CASCADE)
     full_name = models.CharField(max_length=100, null=True)
+    telegram_username = models.CharField(max_length=100, null=True, blank=True)
     url_count = models.IntegerField(default=0)
     organization = models.ForeignKey(Organization, on_delete=models.DO_NOTHING, null=True, blank = True)
 
@@ -88,6 +90,11 @@ class ShortenedUrls(models.Model):
         self.save()
         return self
 
+class Schedules(models.Model):
+    job_name = models.CharField(max_length=50)
+    flag_name = models.CharField(max_length=50)
+    value = models.IntegerField(default=0)
+
 class Statistic(models.Model):
     class ApproachDevice(models.TextChoices):
         PC = 'pc'
@@ -102,7 +109,7 @@ class Statistic(models.Model):
     country_code = models.CharField(max_length=2, default="XX")
     country_name = models.CharField(max_length=100, default="UNKNOWN")
     updated_at = models.DateTimeField(auto_now=True, null=True)
-    # created_at = models.DateTimeField(auto_now_add=True, default = timezone.now())
+    created_at = models.DateTimeField(default = datetime.now() - timedelta(days=7))
     # custom_params = models.JSONField(null=True)
 
     def record(self, request, url:ShortenedUrls):
@@ -139,7 +146,7 @@ class Statistic(models.Model):
 #     @classmethod      #model instance 를 customizing 할 때 사용하는 decorator
 #     def get_tracking_param(cls, shortened_url_id):
 #         return cls.objects.filter(shortened_url_id=shortened_url_id).values_list("params", flat=True)
-#         #values_list(*fields, flat=Falst, named=False)는 values()와 유사하나, values()가 dictionary를 반환하는데 반해, tuple을
-#         #반환함.
+# #         #values_list(*fields, flat=Falst, named=False)는 values()와 유사하나, values()가 dictionary를 반환하는데 반해, tuple을
+# #         #반환함.
 
 

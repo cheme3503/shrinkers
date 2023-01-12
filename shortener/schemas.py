@@ -13,3 +13,5 @@ class Users(Schema):
     full_name: str = None
     organization: OrganizationSchema = None
 
+class TelegramUpdateSchema(Schema):
+    username: str

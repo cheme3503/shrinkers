@@ -121,7 +121,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'CET'
 
 USE_I18N = True
 
@@ -137,4 +137,9 @@ STATIC_URL = '/static/'
 
 GEOIP_PATH = os.path.join(BASE_DIR, 'geolite2')
 
-
+CACHES = {
+    "default":{
+        'BACKEND':'django.core.cache.backends.filebased.FileBasedCache',
+        'Location': os.path.join(BASE_DIR, 'cache_file')
+    }
+}

@@ -67,10 +67,13 @@ def login_view(request):
                     login(request, user.user)
                     is_ok = True
                     request.session["remember_me"] = remember_me
+                    return redirect('index')
 
     else:
         msg=None
         form=LoginForm()
+        if request.user.is_authenticated:
+            return redirect('index')
 
     # print("REMEMBER_ME: ", request.session.get("remember_me"))
 

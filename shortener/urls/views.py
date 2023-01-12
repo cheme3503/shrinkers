@@ -1,12 +1,16 @@
-from shortener.utils import url_count_changer
+from shortener.utils import url_count_changer, get_kst
 from django.contrib import messages
 from shortener.forms import UrlCreateForm
 from django.shortcuts import redirect, render, get_object_or_404
 from shortener.models import ShortenedUrls, Statistic
 from django.contrib.auth.decorators import login_required
 from ratelimit import limits
-#API provider에 의해 허용된 것보다 많은 call을 하는 것을 방지하는 function decorator
+from datetime import datetime, timedelta
+from django.db.models import Count
+from shortener.urls.telegram_handler import command_handler
 
+
+#@limits decorator는 API provider에 의해 허용된 것보다 많은 call을 하는 것을 방지하는 function decorator임.
 @limits(calls=15, period=900)
 def url_redirect(request, prefix, url):
     was_limited = getattr(request, 'limited', False)
@@ -29,8 +33,9 @@ def url_redirect(request, prefix, url):
                                                      # 전달된 URL로 HttpResponseRedirect를 반환함.
 
 def url_list(request):
-    get_list = ShortenedUrls.objects.order_by("-created_at").all()
-    return render(request, 'url_list.html', {'list': get_list})
+    # get_list = ShortenedUrls.objects.order_by("-created_at").filter(creator_id=request.user.id).all()
+    command_handler()
+    return render(request, 'url_list.html', {})
 
 
 @login_required
@@ -84,3 +89,17 @@ def url_change(request, action, url_id):
         return render(request, "url_create.html", {"form": form, "is_update": True})
 
     return redirect("url_list")
+
+def statistic_view(request, url_id: int):
+    url_info = get_object_or_404(ShortenedUrls, pk=url_id)
+    base_qs = Statistic.objects.filter(shortened_url_id=url_id, created_at__gte=get_kst()-timedelta(days=14))
+    clicks = (
+        base_qs.values("created_at__date")
+        .annotate(clicks=Count("id"))
+        .values("created_at__date", "clicks")
+        .order_by("created_at__date")
+    )
+
+    date_list = [c.get("created_at__date").strftime("%Y-%m-%d") for c in clicks]
+    click_list = [c.get("clicks") for c in clicks]
+    return render(request, "statistics.html", {"url": url_info, "kst": get_kst(), "date_list": date_list, "click_list": click_list})
