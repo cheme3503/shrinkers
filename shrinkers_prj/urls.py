@@ -23,6 +23,7 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from ninja import NinjaAPI
 from shortener.users.apis import user as user_router
+from shortener.scheduler import cron_jobs
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -47,7 +48,10 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("shortener.index.urls")),
     path("urls/", include("shortener.urls.urls")),
+    path('admins/', include('shortener.admins.urls')),
     path("api/", include(url_router.urls)),
     path("ninja-api/", apis.urls),
     path("<str:prefix>/<str:url>", url_redirect),
 ]
+
+cron_jobs()

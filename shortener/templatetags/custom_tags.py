@@ -18,3 +18,10 @@ def test_tags(context):
     tag_html = "<span class='badge badge-primary'>테스트 태그</span>"
 
     return mark_safe(tag_html) #simple_tags 는 output을 conditional_escape()을 통해 전달하는데, 추가적인 escaping을 원하지 않을때 사용
+
+@register.filter(name='get_count')
+def get_count(v, args):
+    args = args.split(',')
+    filter_condition = {args[0]:args[1]}
+
+    return v.filter(**filter_condition).count()

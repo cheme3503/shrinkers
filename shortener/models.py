@@ -7,10 +7,10 @@ from datetime import datetime,timedelta
 import itertools
 from typing import Dict
 from django.db.models.base import Model
-# from .models_utils import dict_filter, dict_slice, location_finder
+from .models_utils import dict_filter, dict_slice, location_finder
 from django.utils import timezone
 
-# from django.contrib.auth.models import User
+from django.contrib.auth.models import User
 
 # Create your models here.
 class PayPlan(models.Model):
@@ -105,14 +105,14 @@ class Statistic(models.Model):
     ip = models.CharField(max_length=15)
     web_browser = models.CharField(max_length=50)
     device = models.CharField(max_length=6, choices = ApproachDevice.choices)
-    device_os = models.CharField(max_length=6)
+    device_os = models.CharField(max_length=30)
     country_code = models.CharField(max_length=2, default="XX")
     country_name = models.CharField(max_length=100, default="UNKNOWN")
     updated_at = models.DateTimeField(auto_now=True, null=True)
-    created_at = models.DateTimeField(default = datetime.now() - timedelta(days=7))
-    # custom_params = models.JSONField(null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    custom_params = models.JSONField(null=True)
 
-    def record(self, request, url:ShortenedUrls):
+    def record(self, request, url:ShortenedUrls, params: Dict):
         self.shortened_url = url
         self.ip = request.META["REMOTE_ADDR"] #HttpRequest.META 는 available HTTP header를 반환함.
                                               #Remot_ADDR은 clien의 IP address에 대한 key 값임.
@@ -124,8 +124,9 @@ class Statistic(models.Model):
                        else self.ApproachDevice.PC
                        )
         self.device_os = request.user_agent.os.family
-        # t = TrackingParams.get_tracking_param(url.id) #list of tuple 반환
-        # self.custom_params = dict_slice(dict_filter(params, t), 5) #Dictionary 형태의 params 의 key값이, t에 있으면,
+        t = TrackingParams.get_tracking_param(url.id) #list of tuple 반환
+        if params:
+            self.custom_params = dict_slice(dict_filter(params, t), 5) #Dictionary 형태의 params 의 key값이, t에 있으면,
                                                                    # dictionary 형태로 반환하여, 5개 item을 slicing
         try:
             country = GeoIP2().country(self.ip)
@@ -133,20 +134,49 @@ class Statistic(models.Model):
             self.country_name = country.get("country_name", "UNKONWN")
         except:
             pass
+
         url.clicked()
         self.save()
 
 
-# class TrackingParams(models.Model):
-#     shortened_url = models.ForeignKey(ShortenedUrls, on_delete=models.CASCADE)
-#     params = models.CharField(max_length=20)
-#     updated_at = models.DateTimeField(auto_now=True)
-#     created_at = models.DateTimeField(auto_now_add=True)
-#
-#     @classmethod      #model instance 를 customizing 할 때 사용하는 decorator
-#     def get_tracking_param(cls, shortened_url_id):
-#         return cls.objects.filter(shortened_url_id=shortened_url_id).values_list("params", flat=True)
-# #         #values_list(*fields, flat=Falst, named=False)는 values()와 유사하나, values()가 dictionary를 반환하는데 반해, tuple을
-# #         #반환함.
+class TrackingParams(models.Model):
+    shortened_url = models.ForeignKey(ShortenedUrls, on_delete=models.CASCADE)
+    params = models.CharField(max_length=20)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
+    @classmethod      #model instance 를 customizing 할 때 사용하는 decorator
+    def get_tracking_param(cls, shortened_url_id):
+        return cls.objects.filter(shortened_url_id=shortened_url_id).values_list("params", flat=True)
+#         #values_list(*fields, flat=Falst, named=False)는 values()와 유사하나, values()가 dictionary를 반환하는데 반해, tuple을
+#         #반환함.
 
+class BackOfficeLogs(models.Model):
+    endpoint = models.CharField(max_length=200, blank=True, null=True)
+    body = models.JSONField(null=True)
+    method = models.CharField(max_length=200, blank = True, null = True)
+    user_id = models.IntegerField(blank=True, null=True)
+    ip = models.CharField(max_length=30, blank=True, null=True)
+    status_code = models.IntegerField(blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class DailyVisitors(models.Model):
+    visit_date = models.DateField()
+    visits = models.IntegerField(default = 0)
+    totals = models.IntegerField(default=0)
+    last_updated_on = models.DateTimeField(auto_now=True)
+
+class JobInfo(models.Model):
+    class JOB_STATUS(models.TextChoices):
+        WAIT = 'wait'
+        RUN = 'run'
+        OK = 'ok'
+        ERROR = 'error'
+
+    job_id = models.CharField(max_length=255)
+    user_id = models.IntegerField(null= True)
+    additional_info = models.JSONField(null=True)
+    status = models.CharField(max_length=6, choices=JOB_STATUS.choices, default=JOB_STATUS.WAIT)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)

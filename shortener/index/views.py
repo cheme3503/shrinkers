@@ -45,7 +45,7 @@ def register(request):
 
     else:
         form = RegisterForm()
-        return render(request, "register.html", {"form": form})
+        return render(request, "register.html", {})
 
 def login_view(request):
     is_ok = False
